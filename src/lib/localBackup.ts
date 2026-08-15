@@ -17,7 +17,7 @@
  * No raw production data ever leaves the device through the network.
  */
 
-import type { AppState } from '../types/domain'
+import type { AppState, Employee } from '../types/domain'
 import { serializeBackup } from './importExport'
 
 export const BACKUP_FILENAME_PREFIX = 'regrind-backup'
@@ -63,8 +63,8 @@ export interface SaveResult {
  * for a save location and writes the file in place. Elsewhere it falls back
  * to a normal browser download.
  */
-export async function saveBackup(state: AppState): Promise<SaveResult> {
-  const json = serializeBackup(state)
+export async function saveBackup(state: AppState, roster: Employee[] = []): Promise<SaveResult> {
+  const json = serializeBackup(state, roster)
   const filename = buildBackupFilename(state.shiftDate)
   const bytes = new Blob([json]).size
 

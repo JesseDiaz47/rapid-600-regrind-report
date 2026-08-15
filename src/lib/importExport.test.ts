@@ -92,6 +92,52 @@ describe('backup round-trip', () => {
     expect(result.ok).toBe(false)
   })
 
+  it('carries the employee roster through a round-trip', () => {
+    const roster = [
+      { id: 'employee-1', name: 'Jesse D', pin: null, active: true },
+      { id: 'employee-2', name: 'Sam', pin: '1234', active: true },
+      { id: 'employee-3', name: 'Old Hand', pin: null, active: false },
+    ]
+    const result = parseBackup(serializeBackup(defaultState(), roster))
+
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.roster).toHaveLength(3)
+      expect(result.roster.map((e) => e.name)).toEqual(['Jesse D', 'Sam', 'Old Hand'])
+      // A removed employee stays removed rather than returning as active.
+      expect(result.roster[2].active).toBe(false)
+      // PINs travel so a restored device can guard the right names again.
+      expect(result.roster[1].pin).toBe('1234')
+    }
+  })
+
+  it('restores a backup written before the roster field existed', () => {
+    const legacy = JSON.stringify({
+      app: 'rapid-600-regrind-report',
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: 'then',
+      state: defaultState(),
+    })
+    const result = parseBackup(legacy)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.roster).toEqual([])
+  })
+
+  it('drops a corrupt roster without failing the whole restore', () => {
+    const bad = JSON.stringify({
+      app: 'rapid-600-regrind-report',
+      schemaVersion: SCHEMA_VERSION,
+      exportedAt: 'then',
+      state: defaultState(),
+      roster: [{ name: '' }, 'nonsense', { id: 'employee-9', name: 'Real Person' }],
+    })
+    const result = parseBackup(bad)
+
+    expect(result.ok).toBe(true)
+    if (result.ok) expect(result.roster.map((e) => e.name)).toEqual(['Real Person'])
+  })
+
   it('rejects a wrong schema version', () => {
     const bad = JSON.stringify({
       app: 'regrind-vfd-command-center',

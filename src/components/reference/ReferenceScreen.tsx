@@ -140,7 +140,7 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
   }
 
   async function exportJson() {
-    const json = serializeBackup(state)
+    const json = serializeBackup(state, roster.roster)
     await saveToFolderOrDownload(
       `regrind-backup-${state.shiftDate}-${timestampSlug()}.json`,
       json,
@@ -155,12 +155,12 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       const folder = await getGrantedReportsFolder()
       let result: { destination: 'folder' | 'direct' | 'download'; filename: string; bytes: number }
       if (folder) {
-        const json = serializeBackup(state)
+        const json = serializeBackup(state, roster.roster)
         const filename = `regrind-backup-${state.shiftDate}-${timestampSlug()}.json`
         const bytes = await writeFile(folder, filename, json, 'application/json')
         result = { destination: 'folder', filename, bytes }
       } else {
-        result = await saveBackup(state)
+        result = await saveBackup(state, roster.roster)
       }
       const record: LastBackupRecord = {
         exportedAt: new Date().toISOString(),
@@ -228,7 +228,8 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       const result = parseBackup(String(reader.result))
       if (result.ok) {
         actions.restore(result.state)
-        setRestoreMsg({ ok: true, text: `Restored ${result.state.runs.length} runs.` })
+        const added = roster.mergeRoster(result.roster)
+        setRestoreMsg({ ok: true, text: restoredMessage(result.state.runs.length, added) })
       } else {
         setRestoreMsg({ ok: false, text: result.error })
       }
@@ -796,6 +797,17 @@ function ConfirmRow({
       </div>
     </div>
   )
+}
+
+/**
+ * Say what a restore actually did. The employee count matters because a
+ * restore only ever *adds* people — anyone already on this device is left
+ * exactly as they are — and that is not obvious from the button.
+ */
+function restoredMessage(runCount: number, employeesAdded: number): string {
+  const runs = `Restored ${runCount} run${runCount === 1 ? '' : 's'}`
+  if (employeesAdded === 0) return `${runs}.`
+  return `${runs} and added ${employeesAdded} employee${employeesAdded === 1 ? '' : 's'} to the roster.`
 }
 
 function formatRelative(iso: string): string {

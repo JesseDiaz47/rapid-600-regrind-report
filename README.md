@@ -60,11 +60,22 @@ npm run preview   # serve the production build locally
   or company integration. The employee roster and sign-in are a local, on-device
   name picker for attribution — not a cloud account system. Clearing browser data
   erases everything — **export a JSON backup regularly** (Reference → Export
-  JSON backup).
+  JSON backup). A backup carries the employee roster alongside the shift data,
+  **including each employee's PIN in plain text**, so treat the file as readable
+  by anyone who can reach the folder you save it into.
 - **Not machine control.** No machine control, no automatic VFD changes, no real
   production records committed to the repo.
 - **Offline.** Ships a web manifest and a cache-first service worker, so once
   loaded it works offline and can be added to a phone home screen.
 
 Backups are versioned; restore validates the app signature, schema version, and
-every numeric range before trusting a file.
+every numeric range before trusting a file. Shift data is replaced wholesale on
+restore, but the roster is **merged**: employees this device doesn't have are
+added, and anyone already on it is left exactly as they are, so restoring an
+older backup onto a shared tablet never resurrects someone who was removed after
+that backup was taken. Backups written before the roster was included restore
+exactly as they always did.
+
+If saved data can't be read at all — corrupt, or written by a newer version —
+the app doesn't start empty and overwrite it. The original is set aside and
+Reference offers it back as a download.

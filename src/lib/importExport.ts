@@ -3,10 +3,10 @@
  * version, the app signature, and every numeric range before trusting the data,
  * and preserves blanks rather than coercing missing values into zeros.
  */
-import type { AppState, BackupEnvelope, MachineSettings, Run } from '../types/domain'
+import type { AppState, BackupEnvelope, Employee, MachineSettings, Run } from '../types/domain'
 import { FIXED_VFD, MATERIAL_CODE, SCHEMA_VERSION } from '../types/domain'
 import { computeRunMetrics } from './calculations'
-import { sanitizeState } from './sanitize'
+import { sanitizeRoster, sanitizeState } from './sanitize'
 
 const APP_ID = 'rapid-600-regrind-report'
 
@@ -78,22 +78,23 @@ export function runsToCsv(runs: Run[], settings: MachineSettings): string {
   return [CSV_HEADER.join(','), ...rows].join('\n') + '\n'
 }
 
-/** Build a versioned backup envelope from the current state. */
-export function createBackup(state: AppState): BackupEnvelope {
+/** Build a versioned backup envelope from the current state and roster. */
+export function createBackup(state: AppState, roster: Employee[] = []): BackupEnvelope {
   return {
     app: APP_ID,
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     state,
+    roster,
   }
 }
 
-export function serializeBackup(state: AppState): string {
-  return JSON.stringify(createBackup(state), null, 2)
+export function serializeBackup(state: AppState, roster: Employee[] = []): string {
+  return JSON.stringify(createBackup(state, roster), null, 2)
 }
 
 export type ParseResult =
-  | { ok: true; state: AppState }
+  | { ok: true; state: AppState; roster: Employee[] }
   | { ok: false; error: string }
 
 /** Parse and validate a backup JSON string into a trusted AppState. */
@@ -128,5 +129,8 @@ export function parseBackup(json: string): ParseResult {
   if (!result.ok) {
     return { ok: false, error: result.error }
   }
-  return { ok: true, state: result.state }
+  // A backup written before the roster was included has no `roster` field;
+  // sanitizeRoster turns that (and any corrupt value) into an empty list, so
+  // an older file restores exactly as it always did.
+  return { ok: true, state: result.state, roster: sanitizeRoster(env.roster) }
 }

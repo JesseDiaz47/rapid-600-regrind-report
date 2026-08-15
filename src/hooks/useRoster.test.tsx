@@ -101,6 +101,80 @@ describe('useRoster', () => {
     expect(second.result.current.currentOperator?.name).toBe('Alex Rivera')
   })
 
+  it('merges a restored roster onto an empty device', () => {
+    const { result } = renderHook(() => useRoster())
+    let added = 0
+    act(() => {
+      added = result.current.mergeRoster([
+        { id: 'employee-1', name: 'Jesse D', pin: null, active: true },
+        { id: 'employee-2', name: 'Sam', pin: '1234', active: true },
+      ])
+    })
+
+    expect(added).toBe(2)
+    expect(result.current.activeRoster.map((e) => e.name)).toEqual(['Jesse D', 'Sam'])
+  })
+
+  it('keeps people the device has that the backup does not', () => {
+    const { result } = renderHook(() => useRoster())
+    act(() => result.current.addEmployee('Hired Yesterday', null))
+
+    act(() => {
+      result.current.mergeRoster([{ id: 'employee-1', name: 'Jesse D', pin: null, active: true }])
+    })
+
+    expect(result.current.activeRoster.map((e) => e.name)).toEqual(['Hired Yesterday', 'Jesse D'])
+  })
+
+  it('does not resurrect an employee removed since the backup was taken', () => {
+    const { result } = renderHook(() => useRoster())
+    act(() => result.current.addEmployee('Departed', null))
+    const id = result.current.activeRoster[0].id
+    act(() => result.current.deactivateEmployee(id))
+
+    // The backup still has them active, from before they were removed.
+    let added = 0
+    act(() => {
+      added = result.current.mergeRoster([{ id, name: 'Departed', pin: null, active: true }])
+    })
+
+    expect(added).toBe(0)
+    expect(result.current.activeRoster).toHaveLength(0)
+    expect(result.current.roster[0].active).toBe(false)
+  })
+
+  it('does not duplicate someone retyped by hand before the restore', () => {
+    const { result } = renderHook(() => useRoster())
+    // Retyped after a wipe, so the same person carries a brand-new id.
+    act(() => result.current.addEmployee('Sam', null))
+
+    let added = 0
+    act(() => {
+      added = result.current.mergeRoster([
+        { id: 'employee-old-sam', name: ' sam ', pin: '1234', active: true },
+        { id: 'employee-old-alex', name: 'Alex', pin: null, active: true },
+      ])
+    })
+
+    expect(added).toBe(1)
+    expect(result.current.roster.map((e) => e.name)).toEqual(['Sam', 'Alex'])
+    // The device's Sam wins, so the stale PIN does not silently reappear.
+    expect(result.current.roster[0].pin).toBeNull()
+  })
+
+  it('survives a remount after merging', () => {
+    const first = renderHook(() => useRoster())
+    act(() => {
+      first.result.current.mergeRoster([
+        { id: 'employee-1', name: 'Jesse D', pin: null, active: true },
+      ])
+    })
+    first.unmount()
+
+    const second = renderHook(() => useRoster())
+    expect(second.result.current.roster.map((e) => e.name)).toEqual(['Jesse D'])
+  })
+
   it('mirrors the roster into the reports folder when one is connected', async () => {
     const fakeFolder = { name: 'Reports' } as unknown as FileSystemDirectoryHandle
     vi.spyOn(reportsFolder, 'getGrantedReportsFolder').mockResolvedValue(fakeFolder)
