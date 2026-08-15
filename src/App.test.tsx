@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
 import { ROSTER_KEY, CURRENT_OPERATOR_KEY } from './hooks/useRoster'
+import { DEFAULT_SETTINGS, STORAGE_KEY } from './lib/storage'
 
 function nav(name: RegExp) {
   return screen.getByRole('button', { name })
@@ -124,6 +125,66 @@ describe('App workflow', () => {
     // Undo restores it
     await user.click(screen.getByRole('button', { name: /Undo/i }))
     expect(screen.getByText('This shift (1)')).toBeInTheDocument()
+  })
+})
+
+describe('Reference settings fields', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+    signInTestOperator()
+  })
+
+  it('adopts the reset thresholds after Clear All instead of showing stale values', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(nav(/^Reference$/))
+
+    const safe = screen.getByLabelText('Safe ceiling (A)')
+    const trip = screen.getByLabelText('Trip threshold (A)')
+    fireEvent.change(safe, { target: { value: '110' } })
+    fireEvent.change(trip, { target: { value: '135' } })
+    expect(safe).toHaveValue(110)
+
+    await user.click(screen.getByRole('button', { name: /Clear all data/i }))
+    await user.click(screen.getByRole('button', { name: /Clear everything/i }))
+
+    expect(safe).toHaveValue(DEFAULT_SETTINGS.safeAmps)
+    expect(trip).toHaveValue(DEFAULT_SETTINGS.tripAmps)
+
+    // The real damage was the next keystroke committing the stale pair back
+    // over the defaults the reset had just written.
+    fireEvent.change(trip, { target: { value: '145' } })
+    const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEY) as string)
+    expect(stored.settings.safeAmps).toBe(DEFAULT_SETTINGS.safeAmps)
+    expect(stored.settings.tripAmps).toBe(145)
+  })
+
+  it('adopts a reset material target instead of showing a stale one', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(nav(/^Reference$/))
+
+    const microRate = screen.getByLabelText('Target lb/hr', { selector: '#pr-rate-Micro' })
+    fireEvent.change(microRate, { target: { value: '1300' } })
+    expect(microRate).toHaveValue(1300)
+
+    await user.click(screen.getByRole('button', { name: /Clear all data/i }))
+    await user.click(screen.getByRole('button', { name: /Clear everything/i }))
+
+    expect(microRate).toHaveValue(null)
+  })
+
+  it('keeps typed threshold edits while they are still being typed', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(nav(/^Reference$/))
+
+    const safe = screen.getByLabelText('Safe ceiling (A)')
+    fireEvent.change(safe, { target: { value: '125' } })
+
+    expect(safe).toHaveValue(125)
+    const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEY) as string)
+    expect(stored.settings.safeAmps).toBe(125)
   })
 })
 

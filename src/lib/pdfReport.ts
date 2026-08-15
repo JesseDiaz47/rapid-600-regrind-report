@@ -11,6 +11,7 @@ import {
   shiftTotals,
 } from './calculations'
 import { DASH, fmtNum } from './format'
+import { withTimeout } from './withTimeout'
 
 // Palette lifted from the AGRU photo-documentation report style.
 const INK = '#071827' // header / footer bands
@@ -555,13 +556,36 @@ export function buildShiftReportPdf(state: AppState): Blob {
 
 export type PdfDelivery = 'shared' | 'opened'
 
+/**
+ * A share sheet that never opens leaves `navigator.share()` pending forever,
+ * which would strand the Export PDF button on "Creating PDF…" with no way back
+ * short of a reload. The window is deliberately generous — someone picking a
+ * contact out of a real share sheet takes a while — and expiring it only falls
+ * back to the download path, so the report still reaches the operator.
+ */
+const SHARE_TIMEOUT_MS = 60_000
+
+class ShareTimeoutError extends Error {
+  constructor() {
+    super('Timed out waiting on the share sheet.')
+    this.name = 'ShareTimeoutError'
+  }
+}
+
 /** Share the PDF natively where supported; otherwise open/download a preview. */
 export async function openOrSharePdf(blob: Blob, filename: string): Promise<PdfDelivery> {
   const file = new File([blob], filename, { type: 'application/pdf' })
   const shareData = { title: 'Rapid 600 Regrind Report', files: [file] }
   if (typeof navigator.share === 'function' && navigator.canShare?.(shareData)) {
-    await navigator.share(shareData)
-    return 'shared'
+    try {
+      await withTimeout(navigator.share(shareData), SHARE_TIMEOUT_MS, () => new ShareTimeoutError())
+      return 'shared'
+    } catch (error) {
+      // A cancel (AbortError) is a real answer from the operator and stays an
+      // error the screen reports. A timeout is not an answer at all, so fall
+      // through and deliver the file the other way.
+      if (!(error instanceof ShareTimeoutError)) throw error
+    }
   }
 
   const url = URL.createObjectURL(blob)

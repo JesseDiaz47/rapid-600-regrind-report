@@ -478,11 +478,33 @@ function ThresholdEditor({
 }) {
   const [safe, setSafe] = useState(numberToInput(settings.safeAmps))
   const [trip, setTrip] = useState(numberToInput(settings.tripAmps))
+  /**
+   * The last pair this form pushed upward. Any other value arriving in
+   * `settings` came from outside the form — Clear All, New Shift, or a JSON
+   * restore — and the fields must adopt it. Without this the inputs keep
+   * showing the pre-reset numbers, and the next keystroke commits those stale
+   * numbers back over the values that were just restored.
+   */
+  const committed = useRef({ safeAmps: settings.safeAmps, tripAmps: settings.tripAmps })
   const result = validateThresholds(safe, trip)
+
+  useEffect(() => {
+    if (
+      settings.safeAmps === committed.current.safeAmps &&
+      settings.tripAmps === committed.current.tripAmps
+    ) {
+      return
+    }
+    committed.current = { safeAmps: settings.safeAmps, tripAmps: settings.tripAmps }
+    setSafe(numberToInput(settings.safeAmps))
+    setTrip(numberToInput(settings.tripAmps))
+  }, [settings.safeAmps, settings.tripAmps])
 
   function commit(nextSafe: string, nextTrip: string) {
     const res = validateThresholds(nextSafe, nextTrip)
-    if (res.ok) onUpdate({ safeAmps: res.safeAmps, tripAmps: res.tripAmps })
+    if (!res.ok) return
+    committed.current = { safeAmps: res.safeAmps, tripAmps: res.tripAmps }
+    onUpdate({ safeAmps: res.safeAmps, tripAmps: res.tripAmps })
   }
 
   return (
@@ -624,8 +646,22 @@ function EmployeesCard({ roster }: { roster: UseRoster }) {
 
 function ProfileEditor({ type, app }: { type: MaterialType; app: UseAppState }) {
   const profile = app.state.profiles.find((p) => p.type === type)
-  const [rate, setRate] = useState(numberToInput(profile?.targetRate ?? null))
-  const [expectedYield, setExpectedYield] = useState(numberToInput(profile?.expectedYield ?? null))
+  const storedRate = profile?.targetRate ?? null
+  const storedYield = profile?.expectedYield ?? null
+  const [rate, setRate] = useState(numberToInput(storedRate))
+  const [expectedYield, setExpectedYield] = useState(numberToInput(storedYield))
+  // Adopt outside changes the same way the threshold fields do.
+  const committed = useRef({ rate: storedRate, expectedYield: storedYield })
+
+  useEffect(() => {
+    if (storedRate === committed.current.rate && storedYield === committed.current.expectedYield) {
+      return
+    }
+    committed.current = { rate: storedRate, expectedYield: storedYield }
+    setRate(numberToInput(storedRate))
+    setExpectedYield(numberToInput(storedYield))
+  }, [storedRate, storedYield])
+
   if (!profile) return null
 
   const rateRes = validateNumberField(rate, { label: 'Target lb/hr', max: MAX_WEIGHT })
@@ -635,12 +671,16 @@ function ProfileEditor({ type, app }: { type: MaterialType; app: UseAppState }) 
   function commitRate(v: string) {
     setRate(v)
     const res = validateNumberField(v, { label: 'Target lb/hr', max: MAX_WEIGHT })
-    if (res.ok) app.actions.updateProfile(type, { targetRate: res.value })
+    if (!res.ok) return
+    committed.current = { ...committed.current, rate: res.value }
+    app.actions.updateProfile(type, { targetRate: res.value })
   }
   function commitYield(v: string) {
     setExpectedYield(v)
     const res = validateNumberField(v, { label: 'Target yield', max: MAX_YIELD })
-    if (res.ok) app.actions.updateProfile(type, { expectedYield: res.value })
+    if (!res.ok) return
+    committed.current = { ...committed.current, expectedYield: res.value }
+    app.actions.updateProfile(type, { expectedYield: res.value })
   }
 
   return (
