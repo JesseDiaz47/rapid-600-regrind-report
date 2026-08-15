@@ -31,6 +31,7 @@ import {
   writeFile,
 } from '../../lib/reportsFolder'
 import { clearQuarantine, readQuarantine, type QuarantineRecord } from '../../lib/storage'
+import { BUILD_ID } from '../../lib/buildInfo'
 import { fmtNum } from '../../lib/format'
 
 interface ReferenceScreenProps {
@@ -494,6 +495,9 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
         telemetry. The employee picker is a local, on-device name selector for attribution only. All
         data stays in this browser — export a backup regularly, because clearing browser data erases
         it.
+      </p>
+      <p className="disclaimer" data-testid="build-id">
+        Build {BUILD_ID}
       </p>
     </div>
   )
