@@ -30,6 +30,7 @@ import {
   supportsReportsFolder,
   writeFile,
 } from '../../lib/reportsFolder'
+import { clearQuarantine, readQuarantine, type QuarantineRecord } from '../../lib/storage'
 import { fmtNum } from '../../lib/format'
 
 interface ReferenceScreenProps {
@@ -53,6 +54,7 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
   const [folderInfo, setFolderInfo] = useState<{ name: string; granted: boolean } | null>(null)
   const [folderBusy, setFolderBusy] = useState(false)
   const [folderMsg, setFolderMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [quarantined, setQuarantined] = useState<QuarantineRecord | null>(() => readQuarantine())
 
   // Refresh the "last backup" indicator whenever the screen mounts or the
   // saved state changes (a different shift date means the stale value should
@@ -115,6 +117,21 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
     }
     downloadTextFile(filename, contents, mime)
     return { destination: 'download' as const, filename, bytes: new Blob([contents]).size }
+  }
+
+  /** Hand the unreadable payload back as a file before anything overwrites it. */
+  function downloadQuarantined() {
+    if (!quarantined) return
+    downloadTextFile(
+      `regrind-unreadable-${timestampSlug()}.json`,
+      quarantined.payload,
+      'application/json',
+    )
+  }
+
+  function dismissQuarantined() {
+    clearQuarantine()
+    setQuarantined(null)
   }
 
   async function exportCsv() {
@@ -313,6 +330,24 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
                 {folderMsg.text}
               </p>
             )}
+          </div>
+        )}
+
+        {quarantined && (
+          <div className="quarantine-notice">
+            <p className="form-error" role="alert">
+              <b>Earlier saved data could not be read</b>, so this device started with an empty
+              shift. {quarantined.reason} The original was set aside rather than overwritten —
+              download it before clearing anything.
+            </p>
+            <div className="button-stack">
+              <button type="button" className="btn" onClick={downloadQuarantined}>
+                Download unreadable data
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={dismissQuarantined}>
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
