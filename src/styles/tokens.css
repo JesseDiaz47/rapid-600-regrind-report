@@ -1,0 +1,81 @@
+/* ============================================================
+   Design tokens — "Sacred Industrial" dark blue system.
+   Blue = identity & navigation. Semantic mint/amber/red = safety only.
+   ============================================================ */
+:root {
+  /* Core palette */
+  --navy-shell: #071426;
+  --navy-surface: #0b1e36;
+  --navy-raised: #102a49;
+  --navy-line: #1c3a5e;
+  --cobalt: #176bff;
+  --cobalt-strong: #2f7dff;
+  --cyan: #4dd9ff;
+  --ice: #eaf6ff;
+  --steel: #8fa9c1;
+  --steel-dim: #63809b;
+
+  /* Semantic status (operational safety only) */
+  --mint: #4ddba7;
+  --amber: #ffbd59;
+  --red: #ff5263;
+
+  /* Surfaces & elevation */
+  --bg: var(--navy-shell);
+  --surface: var(--navy-surface);
+  --surface-raised: var(--navy-raised);
+  --surface-glass: rgba(16, 42, 73, 0.66);
+  --border: var(--navy-line);
+  --border-soft: rgba(28, 58, 94, 0.6);
+
+  /* Text */
+  --text: var(--ice);
+  --text-muted: var(--steel);
+  --text-dim: var(--steel-dim);
+
+  /* Accent gradients & glow */
+  --accent: var(--cobalt);
+  --accent-grad: linear-gradient(135deg, var(--cobalt) 0%, var(--cyan) 100%);
+  --glow-cobalt: 0 0 0 1px rgba(23, 107, 255, 0.35), 0 8px 30px rgba(23, 107, 255, 0.22);
+  --glow-soft: 0 10px 30px rgba(4, 12, 24, 0.55);
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Roboto Mono', Menlo, monospace;
+
+  --fs-hero: 2.6rem;
+  --fs-xl: 1.7rem;
+  --fs-lg: 1.25rem;
+  --fs-md: 1rem;
+  --fs-sm: 0.875rem;
+  --fs-xs: 0.75rem;
+
+  /* Spacing scale */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+
+  /* Radii */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+
+  /* Controls */
+  --tap: 44px; /* minimum touch target */
+  --field-fs: 16px; /* keeps iOS from zooming on focus */
+
+  /* Layout */
+  --rail-w: 232px;
+  --content-max: 720px;
+  --nav-h: 64px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}

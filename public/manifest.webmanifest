@@ -1,0 +1,19 @@
+{
+  "name": "Rapid 600 Regrind Report",
+  "short_name": "Rapid 600",
+  "description": "Local-only regrind production tracker for the Rapid 600 granulator, runs at a fixed VFD of 20.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071426",
+  "theme_color": "#071426",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

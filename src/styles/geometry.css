@@ -1,0 +1,49 @@
+/* ============================================================
+   Sacred geometry — low-opacity structure, never decoration spray.
+   A single Seed-of-Life field sits behind the shell at ~5% opacity.
+   ============================================================ */
+.geo-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(23, 107, 255, 0.5), transparent 45%),
+    radial-gradient(circle at 90% 8%, rgba(77, 217, 255, 0.35), transparent 40%);
+}
+
+.geo-field svg {
+  position: absolute;
+  top: -8%;
+  right: -12%;
+  width: min(720px, 120vw);
+  height: auto;
+  color: var(--cyan);
+}
+
+/* Breathing motion for the single hero geometry element only. */
+.geo-breathe {
+  transform-origin: center;
+  animation: geo-breathe 9s ease-in-out infinite;
+}
+@keyframes geo-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.035);
+    opacity: 1;
+  }
+}
+
+.geo-mark {
+  display: block;
+  color: var(--cyan);
+}
+.geo-mark--dim {
+  color: var(--cobalt);
+  opacity: 0.9;
+}

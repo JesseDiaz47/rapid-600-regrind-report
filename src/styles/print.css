@@ -1,0 +1,277 @@
+/* The report exists in the DOM so it always reflects device-local data, but is
+   hidden until the browser print/share sheet creates a PDF. */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: letter landscape;
+    margin: 9mm;
+  }
+
+  .app,
+  .geo-field,
+  .primary-nav,
+  .app-header {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #101923 !important;
+  }
+
+  body {
+    margin: 0 !important;
+  }
+
+  .print-sheet {
+    display: block;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    color: #101923;
+    font-size: 9px;
+    line-height: 1.35;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-conf {
+    background: #071426;
+    color: #fff;
+    text-align: center;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 4px;
+    border-radius: 3px;
+    margin-bottom: 7px;
+  }
+
+  .print-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #0095da;
+    padding-bottom: 7px;
+    margin-bottom: 9px;
+  }
+  .print-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .print-brand img {
+    width: 122px;
+    height: auto;
+  }
+  .print-kicker {
+    margin: 0 0 1px;
+    color: #536273;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .print-head h1 {
+    margin: 0;
+    color: #071426;
+    font-size: 21px;
+    line-height: 1.05;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+  .print-head p {
+    margin: 2px 0 0;
+    color: #536273;
+    font-size: 9px;
+  }
+  .print-head__meta {
+    text-align: right;
+  }
+  .print-head__meta .print-date {
+    color: #071426;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .print-overview {
+    break-after: page;
+    page-break-after: always;
+  }
+  .print-section,
+  .print-notes {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-section + .print-section {
+    margin-top: 10px;
+  }
+  .print-section h2,
+  .print-notes h2,
+  .print-log-page h2 {
+    margin: 0 0 6px;
+    color: #071426;
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .print-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+  .print-kpi {
+    min-height: 48px;
+    padding: 7px 8px;
+    border: 1px solid #cad6e2;
+    border-top: 3px solid #0095da;
+    border-radius: 4px;
+    background: #f4f8fb;
+  }
+  .print-kpi span,
+  .print-label {
+    display: block;
+    color: #687786;
+    font-size: 6.5px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .print-kpi strong {
+    display: block;
+    margin-top: 3px;
+    color: #071426;
+    font-size: 14px;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .print-latest {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .print-latest > div {
+    padding: 7px 9px;
+    border: 1px solid #dbe3ea;
+    border-radius: 4px;
+  }
+  .print-latest strong {
+    display: block;
+    margin-top: 2px;
+    color: #101923;
+    font-size: 9px;
+  }
+
+  .print-insight-table,
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+  .print-insight-table th,
+  .print-table thead th {
+    background: #071426;
+    color: #fff;
+    font-size: 6.5px;
+    font-weight: 800;
+    letter-spacing: 0.025em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .print-insight-table th,
+  .print-insight-table td {
+    padding: 5px 7px;
+    border-bottom: 1px solid #dbe3ea;
+    font-variant-numeric: tabular-nums;
+  }
+  .print-insight-table tbody tr:nth-child(even),
+  .print-table tbody tr:nth-child(even) {
+    background: #f4f8fb;
+  }
+  .print-empty {
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #dbe3ea;
+    color: #536273;
+  }
+
+  .print-observations {
+    margin-top: 7px;
+    padding: 7px 9px;
+    border-left: 4px solid #0095da;
+    background: #eef7fb;
+  }
+  .print-observations h3 {
+    margin: 0 0 3px;
+    color: #071426;
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+  .print-observations ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.5fr;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .print-notes {
+    margin-top: 9px;
+    padding: 7px 9px;
+    border: 1px solid #dbe3ea;
+    border-radius: 4px;
+  }
+  .print-notes h2 {
+    margin-bottom: 2px;
+  }
+  .print-notes p {
+    margin: 0;
+    white-space: pre-wrap;
+  }
+
+  .print-log-page {
+    break-before: page;
+    page-break-before: always;
+  }
+  .print-log-page h2 {
+    border-bottom: 2px solid #0095da;
+    padding-bottom: 5px;
+  }
+  .print-table thead {
+    display: table-header-group;
+  }
+  .print-table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-table thead th {
+    padding: 4px 2.5px;
+  }
+  .print-table tbody td {
+    border-bottom: 1px solid #d9e0e6;
+    padding: 3px 2.5px;
+    font-size: 6.4px;
+    line-height: 1.2;
+    vertical-align: top;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .print-table th:nth-last-child(-n + 2),
+  .print-table td:nth-last-child(-n + 2) {
+    min-width: 56px;
+  }
+  .print-footnote {
+    margin: 6px 0 0;
+    color: #687786;
+    font-size: 7px;
+  }
+}
