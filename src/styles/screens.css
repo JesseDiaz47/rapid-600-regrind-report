@@ -758,6 +758,15 @@
   margin-bottom: 0;
 }
 
+.reports-folder {
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--border-soft);
+}
+.reports-folder .btn {
+  margin-top: var(--sp-2);
+}
+
 /* Employees (Reference) ------------------------------------------ */
 .employee-list {
   list-style: none;

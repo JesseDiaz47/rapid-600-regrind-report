@@ -21,6 +21,14 @@ import {
   writeLastBackup,
   type LastBackupRecord,
 } from '../../lib/localBackup'
+import {
+  chooseReportsFolder,
+  getGrantedReportsFolder,
+  reconnectReportsFolder,
+  reportsFolderInfo,
+  supportsReportsFolder,
+  writeFile,
+} from '../../lib/reportsFolder'
 import { fmtNum } from '../../lib/format'
 
 interface ReferenceScreenProps {
@@ -41,6 +49,9 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
   const [backupMsg, setBackupMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [backupBusy, setBackupBusy] = useState(false)
   const [lastBackup, setLastBackup] = useState<LastBackupRecord | null>(() => readLastBackup())
+  const [folderInfo, setFolderInfo] = useState<{ name: string; granted: boolean } | null>(null)
+  const [folderBusy, setFolderBusy] = useState(false)
+  const [folderMsg, setFolderMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   // Refresh the "last backup" indicator whenever the screen mounts or the
   // saved state changes (a different shift date means the stale value should
@@ -49,25 +60,85 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
     setLastBackup(readLastBackup())
   }, [state.shiftDate])
 
-  function exportCsv() {
-    const csv = runsToCsv(state.runs, state.settings)
-    downloadTextFile(`regrind-${state.shiftDate}-${timestampSlug()}.csv`, csv, 'text/csv')
+  useEffect(() => {
+    reportsFolderInfo().then(setFolderInfo)
+  }, [])
+
+  async function pickFolder() {
+    setFolderBusy(true)
+    setFolderMsg(null)
+    try {
+      const handle = await chooseReportsFolder()
+      setFolderInfo({ name: handle.name, granted: true })
+      setFolderMsg({ ok: true, text: `Reports will save to "${handle.name}" from now on.` })
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        setFolderMsg({ ok: false, text: 'Could not set the folder. Try again.' })
+      }
+    } finally {
+      setFolderBusy(false)
+    }
   }
 
-  function exportJson() {
+  async function reconnectFolder() {
+    setFolderBusy(true)
+    setFolderMsg(null)
+    try {
+      const handle = await reconnectReportsFolder()
+      if (handle) {
+        setFolderInfo({ name: handle.name, granted: true })
+        setFolderMsg({ ok: true, text: `Reconnected to "${handle.name}".` })
+      } else {
+        setFolderMsg({ ok: false, text: 'Permission was not granted.' })
+      }
+    } finally {
+      setFolderBusy(false)
+    }
+  }
+
+  /** Write into the connected Reports folder when one is available; otherwise fall back to a normal download. */
+  async function saveToFolderOrDownload(filename: string, contents: string, mime: string) {
+    const folder = await getGrantedReportsFolder()
+    if (folder) {
+      const bytes = await writeFile(folder, filename, contents, mime)
+      return { destination: 'folder' as const, filename, bytes }
+    }
+    downloadTextFile(filename, contents, mime)
+    return { destination: 'download' as const, filename, bytes: new Blob([contents]).size }
+  }
+
+  async function exportCsv() {
+    const csv = runsToCsv(state.runs, state.settings)
+    await saveToFolderOrDownload(`regrind-${state.shiftDate}-${timestampSlug()}.csv`, csv, 'text/csv')
+  }
+
+  async function exportJson() {
     const json = serializeBackup(state)
-    downloadTextFile(`regrind-backup-${state.shiftDate}-${timestampSlug()}.json`, json, 'application/json')
+    await saveToFolderOrDownload(
+      `regrind-backup-${state.shiftDate}-${timestampSlug()}.json`,
+      json,
+      'application/json',
+    )
   }
 
   async function saveBackupToFolder() {
     setBackupBusy(true)
     setBackupMsg(null)
     try {
-      const result = await saveBackup(state)
+      const folder = await getGrantedReportsFolder()
+      let result: { destination: 'folder' | 'direct' | 'download'; filename: string; bytes: number }
+      if (folder) {
+        const json = serializeBackup(state)
+        const filename = `regrind-backup-${state.shiftDate}-${timestampSlug()}.json`
+        const bytes = await writeFile(folder, filename, json, 'application/json')
+        result = { destination: 'folder', filename, bytes }
+      } else {
+        result = await saveBackup(state)
+      }
       const record: LastBackupRecord = {
         exportedAt: new Date().toISOString(),
         filename: result.filename,
-        destination: result.destination,
+        destination: result.destination === 'folder' ? 'direct' : result.destination,
         bytes: result.bytes,
         shiftDate: state.shiftDate,
         runCount: state.runs.length,
@@ -77,9 +148,9 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       setBackupMsg({
         ok: true,
         text:
-          result.destination === 'direct'
-            ? `Saved ${result.filename} (${fmtNum(result.bytes)} bytes).`
-            : `Downloaded ${result.filename}.`,
+          result.destination === 'download'
+            ? `Downloaded ${result.filename}.`
+            : `Saved ${result.filename} (${fmtNum(result.bytes)} bytes).`,
       })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -97,14 +168,20 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
     setPdfMsg(null)
     try {
       const blob = buildShiftReportPdf(state)
-      const delivery = await openOrSharePdf(blob, pdfFilename(state))
-      setPdfMsg({
-        ok: true,
-        text:
-          delivery === 'shared'
-            ? 'PDF shared.'
-            : 'PDF opened. Use the browser Share button to send or save it.',
-      })
+      const folder = await getGrantedReportsFolder()
+      if (folder) {
+        await writeFile(folder, pdfFilename(state), blob, 'application/pdf')
+        setPdfMsg({ ok: true, text: `Saved ${pdfFilename(state)}.` })
+      } else {
+        const delivery = await openOrSharePdf(blob, pdfFilename(state))
+        setPdfMsg({
+          ok: true,
+          text:
+            delivery === 'shared'
+              ? 'PDF shared.'
+              : 'PDF opened. Use the browser Share button to send or save it.',
+        })
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         setPdfMsg({ ok: true, text: 'PDF sharing canceled.' })
@@ -189,6 +266,46 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
           Runs live in this browser&apos;s storage. Backups are the only copy that survives
           clearing browser data — export one at the end of every shift.
         </p>
+
+        {supportsReportsFolder() && (
+          <div className="reports-folder">
+            <p className="hint-text">
+              {folderInfo?.granted ? (
+                <>
+                  Reports folder: <b>{folderInfo.name}</b>. Backups, CSV, and PDF exports save straight
+                  there — no dialog each time.
+                </>
+              ) : folderInfo ? (
+                <>
+                  Reports folder <b>{folderInfo.name}</b> needs permission reconfirmed (browsers forget
+                  after a while).
+                </>
+              ) : (
+                'No reports folder set yet. Pick one (e.g. a Desktop folder) and every export from here on saves straight into it.'
+              )}
+            </p>
+            <button
+              type="button"
+              className="btn"
+              onClick={folderInfo && !folderInfo.granted ? reconnectFolder : pickFolder}
+              disabled={folderBusy}
+            >
+              {folderBusy
+                ? 'Working…'
+                : folderInfo && !folderInfo.granted
+                  ? 'Reconnect folder…'
+                  : folderInfo
+                    ? 'Change folder…'
+                    : 'Choose reports folder…'}
+            </button>
+            {folderMsg && (
+              <p className={folderMsg.ok ? 'restore-ok' : 'form-error'} role="status">
+                {folderMsg.text}
+              </p>
+            )}
+          </div>
+        )}
+
         <LastBackupStatus record={lastBackup} />
         <div className="button-stack">
           <button
@@ -200,9 +317,11 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
             {backupBusy ? 'Saving backup…' : 'Save backup to folder…'}
           </button>
           <p className="hint-text">
-            {canSaveDirectly()
-              ? 'Opens a save dialog and writes the JSON directly to the folder you choose — pick a shared drive so the shift record is off this device.'
-              : 'Downloads a JSON named with the shift date and time. Move it to a shared drive so the shift record is off this device.'}
+            {folderInfo?.granted
+              ? `Saves straight into "${folderInfo.name}" — no dialog.`
+              : canSaveDirectly()
+                ? 'Opens a save dialog and writes the JSON directly to the folder you choose — pick a shared drive so the shift record is off this device.'
+                : 'Downloads a JSON named with the shift date and time. Move it to a shared drive so the shift record is off this device.'}
           </p>
           {backupMsg && (
             <p className={backupMsg.ok ? 'restore-ok' : 'form-error'} role="status">

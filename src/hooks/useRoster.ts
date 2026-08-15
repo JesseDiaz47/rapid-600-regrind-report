@@ -2,6 +2,27 @@ import { useCallback, useEffect, useState } from 'react'
 import type { Employee } from '../types/domain'
 import { sanitizeRoster } from '../lib/sanitize'
 import { createId } from '../lib/id'
+import { getGrantedReportsFolder, writeFile } from '../lib/reportsFolder'
+
+const ROSTER_BACKUP_FILENAME = 'rapid-600-roster.json'
+
+/**
+ * Best-effort mirror of the roster into the connected Reports folder (see
+ * reportsFolder.ts), so the employee list isn't solely trapped in this
+ * browser's localStorage. Silently does nothing if no folder is connected or
+ * permission has lapsed — the roster's source of truth stays localStorage;
+ * this is a convenience copy, not a requirement for the app to function.
+ */
+async function mirrorRosterToReportsFolder(roster: Employee[]): Promise<void> {
+  try {
+    const folder = await getGrantedReportsFolder()
+    if (!folder) return
+    const envelope = { app: 'rapid-600-regrind-report', exportedAt: new Date().toISOString(), roster }
+    await writeFile(folder, ROSTER_BACKUP_FILENAME, JSON.stringify(envelope, null, 2), 'application/json')
+  } catch {
+    /* best-effort only; localStorage remains authoritative */
+  }
+}
 
 /**
  * Employee roster and current-operator identity. Persisted separately from
@@ -71,6 +92,9 @@ export function useRoster(): UseRoster {
 
   useEffect(() => saveRoster(roster), [roster])
   useEffect(() => saveCurrentOperatorId(currentOperatorId), [currentOperatorId])
+  useEffect(() => {
+    void mirrorRosterToReportsFolder(roster)
+  }, [roster])
 
   const currentOperator = roster.find((e) => e.id === currentOperatorId) ?? null
 

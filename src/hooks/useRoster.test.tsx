@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { act, renderHook } from '@testing-library/react'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { useRoster } from './useRoster'
+import * as reportsFolder from '../lib/reportsFolder'
 
 describe('useRoster', () => {
   beforeEach(() => window.localStorage.clear())
@@ -98,5 +99,36 @@ describe('useRoster', () => {
     const second = renderHook(() => useRoster())
     expect(second.result.current.roster).toHaveLength(1)
     expect(second.result.current.currentOperator?.name).toBe('Alex Rivera')
+  })
+
+  it('mirrors the roster into the reports folder when one is connected', async () => {
+    const fakeFolder = { name: 'Reports' } as unknown as FileSystemDirectoryHandle
+    vi.spyOn(reportsFolder, 'getGrantedReportsFolder').mockResolvedValue(fakeFolder)
+    const writeFileSpy = vi.spyOn(reportsFolder, 'writeFile').mockResolvedValue(42)
+
+    const { result } = renderHook(() => useRoster())
+    act(() => result.current.addEmployee('Alex Rivera', null))
+
+    await waitFor(() => expect(writeFileSpy).toHaveBeenCalled())
+    const [folderArg, filename, contents, mime] = writeFileSpy.mock.calls.at(-1)!
+    expect(folderArg).toBe(fakeFolder)
+    expect(filename).toBe('rapid-600-roster.json')
+    expect(mime).toBe('application/json')
+    expect(JSON.parse(contents as string).roster[0].name).toBe('Alex Rivera')
+
+    vi.restoreAllMocks()
+  })
+
+  it('does not throw when no reports folder is connected', async () => {
+    vi.spyOn(reportsFolder, 'getGrantedReportsFolder').mockResolvedValue(null)
+    const writeFileSpy = vi.spyOn(reportsFolder, 'writeFile')
+
+    const { result } = renderHook(() => useRoster())
+    act(() => result.current.addEmployee('Alex Rivera', null))
+
+    await waitFor(() => expect(result.current.activeRoster).toHaveLength(1))
+    expect(writeFileSpy).not.toHaveBeenCalled()
+
+    vi.restoreAllMocks()
   })
 })
