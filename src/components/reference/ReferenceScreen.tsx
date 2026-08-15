@@ -26,6 +26,7 @@ import {
   getGrantedReportsFolder,
   reconnectReportsFolder,
   reportsFolderInfo,
+  ReportsFolderTimeoutError,
   supportsReportsFolder,
   writeFile,
 } from '../../lib/reportsFolder'
@@ -64,6 +65,13 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
     reportsFolderInfo().then(setFolderInfo)
   }, [])
 
+  function folderErrorMessage(error: unknown): string {
+    if (error instanceof ReportsFolderTimeoutError) {
+      return 'Your browser may be showing a permission prompt near the top of the window (separate from the folder dialog) — look for it and click Allow. If nothing appears, reload the page and try again.'
+    }
+    return 'Could not set the folder. Try again.'
+  }
+
   async function pickFolder() {
     setFolderBusy(true)
     setFolderMsg(null)
@@ -73,7 +81,7 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       setFolderMsg({ ok: true, text: `Reports will save to "${handle.name}" from now on.` })
     } catch (error) {
       if (!(error instanceof DOMException && error.name === 'AbortError')) {
-        setFolderMsg({ ok: false, text: 'Could not set the folder. Try again.' })
+        setFolderMsg({ ok: false, text: folderErrorMessage(error) })
       }
     } finally {
       setFolderBusy(false)
@@ -91,6 +99,8 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       } else {
         setFolderMsg({ ok: false, text: 'Permission was not granted.' })
       }
+    } catch (error) {
+      setFolderMsg({ ok: false, text: folderErrorMessage(error) })
     } finally {
       setFolderBusy(false)
     }

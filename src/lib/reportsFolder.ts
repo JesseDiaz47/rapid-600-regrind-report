@@ -25,6 +25,39 @@ type PermissionedHandle = FileSystemDirectoryHandle & {
   requestPermission(descriptor: { mode: 'read' | 'readwrite' }): Promise<'granted' | 'denied' | 'prompt'>
 }
 
+/**
+ * Some Chromium builds show a second, easy-to-miss permission prompt (a bar
+ * near the top of the window, separate from the OS folder dialog) before a
+ * showDirectoryPicker()/requestPermission() promise resolves. If the user
+ * doesn't notice it, the promise hangs forever with no way to recover short
+ * of reloading the page. Race it against a timeout so the caller can surface
+ * that explicitly instead of leaving the UI stuck on "Working…".
+ */
+export class ReportsFolderTimeoutError extends Error {
+  constructor() {
+    super('Timed out waiting on a browser permission prompt.')
+    this.name = 'ReportsFolderTimeoutError'
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new ReportsFolderTimeoutError()), ms)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error) => {
+        clearTimeout(timer)
+        reject(error)
+      },
+    )
+  })
+}
+
+const PROMPT_TIMEOUT_MS = 45_000
+
 export function supportsReportsFolder(): boolean {
   if (typeof window === 'undefined') return false
   const w = window as unknown as { showDirectoryPicker?: unknown }
@@ -82,7 +115,7 @@ export async function chooseReportsFolder(): Promise<FileSystemDirectoryHandle> 
   const w = window as unknown as {
     showDirectoryPicker: (opts?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>
   }
-  const handle = await w.showDirectoryPicker({ mode: 'readwrite' })
+  const handle = await withTimeout(w.showDirectoryPicker({ mode: 'readwrite' }), PROMPT_TIMEOUT_MS)
   await idbSet(HANDLE_KEY, handle)
   return handle
 }
@@ -117,7 +150,7 @@ export async function reportsFolderInfo(): Promise<{ name: string; granted: bool
 export async function reconnectReportsFolder(): Promise<FileSystemDirectoryHandle | null> {
   const handle = (await storedHandle()) as PermissionedHandle | null
   if (!handle) return null
-  const perm = await handle.requestPermission({ mode: 'readwrite' })
+  const perm = await withTimeout(handle.requestPermission({ mode: 'readwrite' }), PROMPT_TIMEOUT_MS)
   return perm === 'granted' ? handle : null
 }
 

@@ -5,6 +5,7 @@ import {
   getGrantedReportsFolder,
   reconnectReportsFolder,
   reportsFolderInfo,
+  ReportsFolderTimeoutError,
   supportsReportsFolder,
   writeFile,
 } from './reportsFolder'
@@ -204,5 +205,37 @@ describe('writeFile', () => {
     )
     expect(bytes).toBe(pdfBlob.size)
     expect(handle._files.get('report.pdf')?.blob).toBe(pdfBlob)
+  })
+})
+
+describe('chooseReportsFolder timeout', () => {
+  beforeEach(() => installFakeIndexedDb())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+    const w = window as unknown as { showDirectoryPicker?: unknown }
+    delete w.showDirectoryPicker
+  })
+
+  it('rejects with ReportsFolderTimeoutError instead of hanging forever if the browser never resolves the picker', async () => {
+    vi.useFakeTimers()
+    const w = window as unknown as { showDirectoryPicker: () => Promise<unknown> }
+    // Simulates a missed/hidden Chromium permission prompt: the picker
+    // promise just never settles.
+    w.showDirectoryPicker = vi.fn(() => new Promise(() => {}))
+
+    const assertion = expect(chooseReportsFolder()).rejects.toBeInstanceOf(ReportsFolderTimeoutError)
+    await vi.advanceTimersByTimeAsync(45_000)
+    await assertion
+  })
+
+  it('still resolves normally if the picker settles before the timeout', async () => {
+    vi.useFakeTimers()
+    const handle = fakeDirectoryHandle('Reports')
+    const w = window as unknown as { showDirectoryPicker: () => Promise<unknown> }
+    w.showDirectoryPicker = vi.fn(async () => handle)
+
+    const result = await chooseReportsFolder()
+    expect(result).toBe(handle)
   })
 })
