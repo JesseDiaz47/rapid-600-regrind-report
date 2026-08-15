@@ -844,3 +844,17 @@
   color: var(--text);
   margin-bottom: var(--sp-4);
 }
+.operator-gate__text-input {
+  width: 100%;
+  min-height: var(--tap);
+  font-size: var(--fs-lg);
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  margin-bottom: var(--sp-4);
+}
+.operator-gate__first .hint-text {
+  margin-bottom: var(--sp-4);
+}

@@ -145,4 +145,21 @@ describe('Operator sign-in gate', () => {
     expect(screen.getByText('No active roll')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Alex Rivera' })).toBeInTheDocument()
   })
+
+  it('lets the first employee be added directly from the gate when the roster is empty', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    expect(screen.getByText("Who's working?")).toBeInTheDocument()
+    expect(screen.getByText(/No employees on the roster yet/)).toBeInTheDocument()
+
+    await user.type(screen.getByPlaceholderText('First name / initials'), 'Lenny')
+    await user.click(screen.getByRole('button', { name: /Add employee/i }))
+
+    // The new name now appears as a pickable tile — no reload required.
+    const tile = screen.getByRole('button', { name: 'Lenny' })
+    expect(tile).toBeInTheDocument()
+    await user.click(tile)
+    expect(screen.getByText('No active roll')).toBeInTheDocument()
+  })
 })

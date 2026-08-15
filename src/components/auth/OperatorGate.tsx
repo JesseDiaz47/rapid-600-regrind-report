@@ -11,8 +11,16 @@ export function OperatorGate({ roster }: { roster: UseRoster }) {
   const [pendingId, setPendingId] = useState<string | null>(null)
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [newName, setNewName] = useState('')
 
   const pendingEmployee = roster.activeRoster.find((e) => e.id === pendingId) ?? null
+
+  function addFirstEmployee(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newName.trim()) return
+    roster.addEmployee(newName, null)
+    setNewName('')
+  }
 
   function pick(id: string) {
     setError(null)
@@ -44,10 +52,22 @@ export function OperatorGate({ roster }: { roster: UseRoster }) {
         <h1>Who&apos;s working?</h1>
 
         {roster.activeRoster.length === 0 ? (
-          <p className="hint-text">
-            No employees on the roster yet. Ask a manager to add names in Reference →
-            Employees.
-          </p>
+          <form onSubmit={addFirstEmployee} className="operator-gate__first">
+            <p className="hint-text">
+              No employees on the roster yet. Add the first name to get started — once someone&apos;s
+              on the roster, new names get added from Reference → Employees instead.
+            </p>
+            <input
+              autoFocus
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="First name / initials"
+              className="operator-gate__text-input"
+            />
+            <button type="submit" className="btn btn-primary btn-lg btn-block">
+              Add employee
+            </button>
+          </form>
         ) : pendingEmployee ? (
           <form onSubmit={submitPin} className="operator-gate__pin">
             <p>
