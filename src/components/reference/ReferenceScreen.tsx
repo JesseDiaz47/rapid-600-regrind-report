@@ -30,6 +30,7 @@ import {
   supportsReportsFolder,
   writeFile,
 } from '../../lib/reportsFolder'
+import { clearQuarantine, readQuarantine, type QuarantineRecord } from '../../lib/storage'
 import { fmtNum } from '../../lib/format'
 
 interface ReferenceScreenProps {
@@ -53,6 +54,7 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
   const [folderInfo, setFolderInfo] = useState<{ name: string; granted: boolean } | null>(null)
   const [folderBusy, setFolderBusy] = useState(false)
   const [folderMsg, setFolderMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [quarantined, setQuarantined] = useState<QuarantineRecord | null>(() => readQuarantine())
 
   // Refresh the "last backup" indicator whenever the screen mounts or the
   // saved state changes (a different shift date means the stale value should
@@ -117,13 +119,28 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
     return { destination: 'download' as const, filename, bytes: new Blob([contents]).size }
   }
 
+  /** Hand the unreadable payload back as a file before anything overwrites it. */
+  function downloadQuarantined() {
+    if (!quarantined) return
+    downloadTextFile(
+      `regrind-unreadable-${timestampSlug()}.json`,
+      quarantined.payload,
+      'application/json',
+    )
+  }
+
+  function dismissQuarantined() {
+    clearQuarantine()
+    setQuarantined(null)
+  }
+
   async function exportCsv() {
     const csv = runsToCsv(state.runs, state.settings)
     await saveToFolderOrDownload(`regrind-${state.shiftDate}-${timestampSlug()}.csv`, csv, 'text/csv')
   }
 
   async function exportJson() {
-    const json = serializeBackup(state)
+    const json = serializeBackup(state, roster.roster)
     await saveToFolderOrDownload(
       `regrind-backup-${state.shiftDate}-${timestampSlug()}.json`,
       json,
@@ -138,12 +155,12 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       const folder = await getGrantedReportsFolder()
       let result: { destination: 'folder' | 'direct' | 'download'; filename: string; bytes: number }
       if (folder) {
-        const json = serializeBackup(state)
+        const json = serializeBackup(state, roster.roster)
         const filename = `regrind-backup-${state.shiftDate}-${timestampSlug()}.json`
         const bytes = await writeFile(folder, filename, json, 'application/json')
         result = { destination: 'folder', filename, bytes }
       } else {
-        result = await saveBackup(state)
+        result = await saveBackup(state, roster.roster)
       }
       const record: LastBackupRecord = {
         exportedAt: new Date().toISOString(),
@@ -211,7 +228,8 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
       const result = parseBackup(String(reader.result))
       if (result.ok) {
         actions.restore(result.state)
-        setRestoreMsg({ ok: true, text: `Restored ${result.state.runs.length} runs.` })
+        const added = roster.mergeRoster(result.roster)
+        setRestoreMsg({ ok: true, text: restoredMessage(result.state.runs.length, added) })
       } else {
         setRestoreMsg({ ok: false, text: result.error })
       }
@@ -313,6 +331,24 @@ export function ReferenceScreen({ app, quiet, onQuietChange, roster }: Reference
                 {folderMsg.text}
               </p>
             )}
+          </div>
+        )}
+
+        {quarantined && (
+          <div className="quarantine-notice">
+            <p className="form-error" role="alert">
+              <b>Earlier saved data could not be read</b>, so this device started with an empty
+              shift. {quarantined.reason} The original was set aside rather than overwritten —
+              download it before clearing anything.
+            </p>
+            <div className="button-stack">
+              <button type="button" className="btn" onClick={downloadQuarantined}>
+                Download unreadable data
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={dismissQuarantined}>
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
@@ -478,11 +514,33 @@ function ThresholdEditor({
 }) {
   const [safe, setSafe] = useState(numberToInput(settings.safeAmps))
   const [trip, setTrip] = useState(numberToInput(settings.tripAmps))
+  /**
+   * The last pair this form pushed upward. Any other value arriving in
+   * `settings` came from outside the form — Clear All, New Shift, or a JSON
+   * restore — and the fields must adopt it. Without this the inputs keep
+   * showing the pre-reset numbers, and the next keystroke commits those stale
+   * numbers back over the values that were just restored.
+   */
+  const committed = useRef({ safeAmps: settings.safeAmps, tripAmps: settings.tripAmps })
   const result = validateThresholds(safe, trip)
+
+  useEffect(() => {
+    if (
+      settings.safeAmps === committed.current.safeAmps &&
+      settings.tripAmps === committed.current.tripAmps
+    ) {
+      return
+    }
+    committed.current = { safeAmps: settings.safeAmps, tripAmps: settings.tripAmps }
+    setSafe(numberToInput(settings.safeAmps))
+    setTrip(numberToInput(settings.tripAmps))
+  }, [settings.safeAmps, settings.tripAmps])
 
   function commit(nextSafe: string, nextTrip: string) {
     const res = validateThresholds(nextSafe, nextTrip)
-    if (res.ok) onUpdate({ safeAmps: res.safeAmps, tripAmps: res.tripAmps })
+    if (!res.ok) return
+    committed.current = { safeAmps: res.safeAmps, tripAmps: res.tripAmps }
+    onUpdate({ safeAmps: res.safeAmps, tripAmps: res.tripAmps })
   }
 
   return (
@@ -624,8 +682,22 @@ function EmployeesCard({ roster }: { roster: UseRoster }) {
 
 function ProfileEditor({ type, app }: { type: MaterialType; app: UseAppState }) {
   const profile = app.state.profiles.find((p) => p.type === type)
-  const [rate, setRate] = useState(numberToInput(profile?.targetRate ?? null))
-  const [expectedYield, setExpectedYield] = useState(numberToInput(profile?.expectedYield ?? null))
+  const storedRate = profile?.targetRate ?? null
+  const storedYield = profile?.expectedYield ?? null
+  const [rate, setRate] = useState(numberToInput(storedRate))
+  const [expectedYield, setExpectedYield] = useState(numberToInput(storedYield))
+  // Adopt outside changes the same way the threshold fields do.
+  const committed = useRef({ rate: storedRate, expectedYield: storedYield })
+
+  useEffect(() => {
+    if (storedRate === committed.current.rate && storedYield === committed.current.expectedYield) {
+      return
+    }
+    committed.current = { rate: storedRate, expectedYield: storedYield }
+    setRate(numberToInput(storedRate))
+    setExpectedYield(numberToInput(storedYield))
+  }, [storedRate, storedYield])
+
   if (!profile) return null
 
   const rateRes = validateNumberField(rate, { label: 'Target lb/hr', max: MAX_WEIGHT })
@@ -635,12 +707,16 @@ function ProfileEditor({ type, app }: { type: MaterialType; app: UseAppState }) 
   function commitRate(v: string) {
     setRate(v)
     const res = validateNumberField(v, { label: 'Target lb/hr', max: MAX_WEIGHT })
-    if (res.ok) app.actions.updateProfile(type, { targetRate: res.value })
+    if (!res.ok) return
+    committed.current = { ...committed.current, rate: res.value }
+    app.actions.updateProfile(type, { targetRate: res.value })
   }
   function commitYield(v: string) {
     setExpectedYield(v)
     const res = validateNumberField(v, { label: 'Target yield', max: MAX_YIELD })
-    if (res.ok) app.actions.updateProfile(type, { expectedYield: res.value })
+    if (!res.ok) return
+    committed.current = { ...committed.current, expectedYield: res.value }
+    app.actions.updateProfile(type, { expectedYield: res.value })
   }
 
   return (
@@ -721,6 +797,17 @@ function ConfirmRow({
       </div>
     </div>
   )
+}
+
+/**
+ * Say what a restore actually did. The employee count matters because a
+ * restore only ever *adds* people — anyone already on this device is left
+ * exactly as they are — and that is not obvious from the button.
+ */
+function restoredMessage(runCount: number, employeesAdded: number): string {
+  const runs = `Restored ${runCount} run${runCount === 1 ? '' : 's'}`
+  if (employeesAdded === 0) return `${runs}.`
+  return `${runs} and added ${employeesAdded} employee${employeesAdded === 1 ? '' : 's'} to the roster.`
 }
 
 function formatRelative(iso: string): string {

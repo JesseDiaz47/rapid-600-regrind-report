@@ -10,6 +10,8 @@
  * the machine the browser is running on.
  */
 
+import { withTimeout } from './withTimeout'
+
 const DB_NAME = 'rapid-600-fs'
 const STORE = 'handles'
 const HANDLE_KEY = 'reportsFolder'
@@ -40,20 +42,8 @@ export class ReportsFolderTimeoutError extends Error {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new ReportsFolderTimeoutError()), ms)
-    promise.then(
-      (value) => {
-        clearTimeout(timer)
-        resolve(value)
-      },
-      (error) => {
-        clearTimeout(timer)
-        reject(error)
-      },
-    )
-  })
+function withPromptTimeout<T>(promise: Promise<T>): Promise<T> {
+  return withTimeout(promise, PROMPT_TIMEOUT_MS, () => new ReportsFolderTimeoutError())
 }
 
 const PROMPT_TIMEOUT_MS = 45_000
@@ -115,7 +105,7 @@ export async function chooseReportsFolder(): Promise<FileSystemDirectoryHandle> 
   const w = window as unknown as {
     showDirectoryPicker: (opts?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>
   }
-  const handle = await withTimeout(w.showDirectoryPicker({ mode: 'readwrite' }), PROMPT_TIMEOUT_MS)
+  const handle = await withPromptTimeout(w.showDirectoryPicker({ mode: 'readwrite' }))
   await idbSet(HANDLE_KEY, handle)
   return handle
 }
@@ -150,7 +140,7 @@ export async function reportsFolderInfo(): Promise<{ name: string; granted: bool
 export async function reconnectReportsFolder(): Promise<FileSystemDirectoryHandle | null> {
   const handle = (await storedHandle()) as PermissionedHandle | null
   if (!handle) return null
-  const perm = await withTimeout(handle.requestPermission({ mode: 'readwrite' }), PROMPT_TIMEOUT_MS)
+  const perm = await withPromptTimeout(handle.requestPermission({ mode: 'readwrite' }))
   return perm === 'granted' ? handle : null
 }
 

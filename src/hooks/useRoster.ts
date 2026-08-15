@@ -82,6 +82,8 @@ export interface UseRoster {
   /** Returns false if a PIN is set and doesn't match. */
   selectOperator: (id: string, pin?: string) => boolean
   signOut: () => void
+  /** Add employees from a restored backup. Returns how many were added. */
+  mergeRoster: (incoming: Employee[]) => number
 }
 
 export function useRoster(): UseRoster {
@@ -131,6 +133,38 @@ export function useRoster(): UseRoster {
 
   const signOut = useCallback(() => setCurrentOperatorId(null), [])
 
+  /**
+   * Merge a restored roster into this device's, adding only people the device
+   * doesn't already have. The device is "now" and the backup is "then", so an
+   * entry on both sides keeps the device's version — otherwise restoring an
+   * older backup onto a tablet that's in use would resurrect employees who
+   * have since been removed.
+   *
+   * Names are matched alongside ids because the common recovery is to retype
+   * a couple of names after a wipe and only then remember the backup: those
+   * people have fresh ids, and matching on id alone would list every one of
+   * them twice on the sign-in screen.
+   */
+  const mergeRoster = useCallback(
+    (incoming: Employee[]): number => {
+      const ids = new Set(roster.map((e) => e.id))
+      const names = new Set(roster.map((e) => e.name.trim().toLowerCase()))
+      const additions: Employee[] = []
+
+      for (const employee of incoming) {
+        const name = employee.name.trim().toLowerCase()
+        if (ids.has(employee.id) || names.has(name)) continue
+        ids.add(employee.id)
+        names.add(name)
+        additions.push(employee)
+      }
+
+      if (additions.length > 0) setRoster((current) => [...current, ...additions])
+      return additions.length
+    },
+    [roster],
+  )
+
   return {
     roster,
     activeRoster: roster.filter((e) => e.active),
@@ -140,5 +174,6 @@ export function useRoster(): UseRoster {
     reactivateEmployee,
     selectOperator,
     signOut,
+    mergeRoster,
   }
 }

@@ -66,6 +66,53 @@ describe('PDF report export', () => {
     expect(pageCount(bytes)).toBeGreaterThan(1)
   })
 
+  it('falls back to a download when the share sheet never resolves', async () => {
+    let clicked = false
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:report-preview')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {
+      clicked = true
+    })
+    // A share sheet that opens but never settles — the Export PDF button used
+    // to sit on "Creating PDF…" forever waiting on this promise.
+    Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true })
+    Object.defineProperty(navigator, 'share', {
+      value: () => new Promise<void>(() => {}),
+      configurable: true,
+    })
+    vi.useFakeTimers()
+
+    try {
+      const delivery = openOrSharePdf(new Blob(['pdf'], { type: 'application/pdf' }), 'shift.pdf')
+      await vi.advanceTimersByTimeAsync(60_000)
+
+      await expect(delivery).resolves.toBe('opened')
+      expect(clicked).toBe(true)
+    } finally {
+      vi.useRealTimers()
+      Object.defineProperty(navigator, 'canShare', { value: undefined, configurable: true })
+      Object.defineProperty(navigator, 'share', { value: undefined, configurable: true })
+    }
+  })
+
+  it('reports a canceled share rather than silently downloading instead', async () => {
+    const abort = Object.assign(new Error('cancel'), { name: 'AbortError' })
+    Object.defineProperty(navigator, 'canShare', { value: () => true, configurable: true })
+    Object.defineProperty(navigator, 'share', {
+      value: () => Promise.reject(abort),
+      configurable: true,
+    })
+
+    try {
+      await expect(
+        openOrSharePdf(new Blob(['pdf'], { type: 'application/pdf' }), 'shift.pdf'),
+      ).rejects.toBe(abort)
+    } finally {
+      Object.defineProperty(navigator, 'canShare', { value: undefined, configurable: true })
+      Object.defineProperty(navigator, 'share', { value: undefined, configurable: true })
+    }
+  })
+
   it('opens a PDF preview when native file sharing is unavailable', async () => {
     const opened: { href?: string; download?: string; target?: string } = {}
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:report-preview')

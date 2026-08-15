@@ -135,6 +135,17 @@ export interface BackupEnvelope {
   schemaVersion: number
   exportedAt: string
   state: AppState
+  /**
+   * The employee roster, carried beside `state` rather than inside it so that
+   * backups written before this field existed still restore cleanly and so
+   * adding it needs no schema bump. Optional for exactly that reason — absent
+   * means "this backup predates the roster", not "the roster was empty".
+   *
+   * This includes each employee's PIN. A PIN is not a password (see
+   * `Employee`), and a backup lands wherever the operator saves it, so the
+   * file should be treated as readable by anyone who can reach that folder.
+   */
+  roster?: Employee[]
 }
 
 /** Amp headroom status relative to the safe/trip thresholds. */

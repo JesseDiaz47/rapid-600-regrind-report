@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { STORAGE_KEY, defaultState, loadState, saveState } from './storage'
+import {
+  QUARANTINE_KEY,
+  STORAGE_KEY,
+  clearQuarantine,
+  defaultState,
+  loadState,
+  readQuarantine,
+  saveState,
+} from './storage'
 import { SCHEMA_VERSION } from '../types/domain'
 
 describe('storage', () => {
@@ -83,6 +91,54 @@ describe('storage', () => {
     })
     const state = loadState()
     expect(state.runs.filter((r) => r.active).length).toBe(1)
+  })
+})
+
+describe('quarantine of unreadable data', () => {
+  beforeEach(() => window.localStorage.clear())
+
+  it('sets aside a future schema version instead of erasing it', () => {
+    const future = JSON.stringify({ schemaVersion: 999, runs: [{ id: 'x' }], shiftNotes: 'real work' })
+    window.localStorage.setItem(STORAGE_KEY, future)
+
+    loadState()
+
+    const held = readQuarantine()
+    expect(held?.payload).toBe(future)
+    expect(held?.reason).toContain('999')
+    // The app saves a clean state over STORAGE_KEY right after loading, so the
+    // quarantine copy is the only thing standing between a version bump and a
+    // silently erased shift.
+    saveState(defaultState())
+    expect(readQuarantine()?.payload).toBe(future)
+  })
+
+  it('sets aside corrupt JSON', () => {
+    window.localStorage.setItem(STORAGE_KEY, '{not valid json')
+    loadState()
+    expect(readQuarantine()?.payload).toBe('{not valid json')
+  })
+
+  it('sets aside a payload that fails validation', () => {
+    const bad = JSON.stringify({ ...defaultState(), runs: [42] })
+    window.localStorage.setItem(STORAGE_KEY, bad)
+    loadState()
+    expect(readQuarantine()?.payload).toBe(bad)
+  })
+
+  it('leaves no quarantine behind on a healthy load', () => {
+    saveState({ ...defaultState(), shiftNotes: 'fine' })
+    expect(loadState().shiftNotes).toBe('fine')
+    expect(readQuarantine()).toBeNull()
+    expect(window.localStorage.getItem(QUARANTINE_KEY)).toBeNull()
+  })
+
+  it('clears on dismissal', () => {
+    window.localStorage.setItem(STORAGE_KEY, '{not valid json')
+    loadState()
+    expect(readQuarantine()).not.toBeNull()
+    clearQuarantine()
+    expect(readQuarantine()).toBeNull()
   })
 })
 
