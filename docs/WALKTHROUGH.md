@@ -154,6 +154,33 @@ logbook into something that looks like a tuning tool.
 Printing uses the browser's own print command while on this screen; a hidden
 `PrintSheet` renders a landscape report under `@media print`.
 
+### The exported shift report
+
+`buildShiftReportPdf` composes a single landscape page with jsPDF — Shift Pulse
+totals, the complete run log, material insights, amp watch, shift notes, and a
+blank comments band for the next shift.
+
+<img src="screenshots/09-pdf-report.png" width="820" alt="Sample shift report PDF with shift pulse totals, complete run log, material insights, amp watch and shift notes">
+
+[Download the sample](examples/shift-report-sample.pdf) · generated from demo
+data plus one logged run.
+
+The report prints **raw values beside derived ones** so any figure can be
+checked by hand, and it counts unrecorded fields explicitly under **Data gaps**
+rather than letting a blank slip past. Long shifts flow onto continuation pages
+with a repeated header — [`pdfReport.test.ts`](../src/lib/pdfReport.test.ts)
+covers that, the empty-shift case, and clock-order sorting.
+
+Column widths in the run-log table are fixed and sum to the exact table width.
+That matters more than it sounds: autoTable is set to `overflow: 'linebreak'`,
+so a column one point too narrow doesn't clip — it wraps mid-value. An earlier
+build rendered a start time of `12:19` as `12:1` / `9` and a yield of `93.0%` as
+`93.0` / `%`, which on a production record is a misreading waiting to happen.
+
+**Known gap:** demo runs carry a DEMO badge in the app, but neither the PDF nor
+the CSV export reproduces it, so a report exported with demo data loaded is
+indistinguishable from a real one.
+
 ---
 
 ## How the numbers work

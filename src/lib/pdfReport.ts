@@ -475,23 +475,38 @@ export function buildShiftReportPdf(state: AppState): Blob {
     ])
   }
 
+  /**
+   * Fixed column widths, summing to exactly `TABLE_W`.
+   *
+   * Every value here has to hold its widest realistic contents *after* cell
+   * padding is subtracted, because `overflow: 'linebreak'` wraps rather than
+   * shrinking: a column one point too narrow doesn't clip, it splits the value
+   * across two lines. That produced a report where a start time of 12:19 read
+   * as "12:1 / 9" and a yield of 93.0% as "93.0 / %" — numbers on a production
+   * record that could be misread at a glance.
+   *
+   * The widest cases are 5-glyph numerics (`12:19`, `93.0%`, `1,695`, `138.2`),
+   * which need roughly 19–22pt of text space at this font size. The notes
+   * column absorbs the difference, since prose is the one column that wraps
+   * harmlessly by design.
+   */
   const columnStyles: Record<number, { cellWidth: number; halign?: 'right' | 'center' | 'left' }> = {
-    0: { cellWidth: 14, halign: 'right' },
-    1: { cellWidth: 38 },
+    0: { cellWidth: 13, halign: 'right' },
+    1: { cellWidth: 36 },
     2: { cellWidth: 44 },
-    3: { cellWidth: 28 },
-    4: { cellWidth: 23, halign: 'center' },
-    5: { cellWidth: 23, halign: 'center' },
+    3: { cellWidth: 26 },
+    4: { cellWidth: 26, halign: 'center' },
+    5: { cellWidth: 26, halign: 'center' },
     6: { cellWidth: 18, halign: 'right' },
-    7: { cellWidth: 26, halign: 'right' },
-    8: { cellWidth: 26, halign: 'right' },
-    9: { cellWidth: 24, halign: 'right' },
-    10: { cellWidth: 24, halign: 'right' },
+    7: { cellWidth: 25, halign: 'right' },
+    8: { cellWidth: 25, halign: 'right' },
+    9: { cellWidth: 27, halign: 'right' },
+    10: { cellWidth: 26, halign: 'right' },
     11: { cellWidth: 24, halign: 'right' },
     12: { cellWidth: 23, halign: 'right' },
-    13: { cellWidth: 22, halign: 'right' },
-    14: { cellWidth: 25, halign: 'right' },
-    15: { cellWidth: 102 },
+    13: { cellWidth: 26, halign: 'right' },
+    14: { cellWidth: 24, halign: 'right' },
+    15: { cellWidth: 95 },
   }
 
   autoTable(doc, {
@@ -511,11 +526,11 @@ export function buildShiftReportPdf(state: AppState): Blob {
       textColor: '#FFFFFF',
       fontStyle: 'bold',
       fontSize: 6.6,
-      cellPadding: 3,
+      cellPadding: 2,
     },
     styles: {
       fontSize: 7.6,
-      cellPadding: 3,
+      cellPadding: 2,
       overflow: 'linebreak',
       textColor: TEXT,
       valign: 'top',

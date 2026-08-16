@@ -171,3 +171,33 @@ exactly as they always did.
 If saved data can't be read at all — corrupt, or written by a newer version —
 the app doesn't start empty and overwrite it. The original is set aside and
 Reference offers it back as a download.
+
+## The shift report
+
+Reference → **Export PDF report** turns the shift into a single landscape page
+built for handing over: Shift Pulse totals across the top, the complete run log
+with every raw value and its derived metrics, material insights and amp watch
+down the side, shift notes, and a comments band left blank for the next shift
+to write on.
+
+[**Download the sample PDF →**](docs/examples/shift-report-sample.pdf)
+
+![Sample shift report PDF: an AGRU-branded landscape page with shift pulse totals, the complete run log table, material insights, amp watch, shift notes, and a comments band](docs/screenshots/09-pdf-report.png)
+
+Worth noting in the page above:
+
+- **Every raw value and every derived one sit side by side** — in/out weight,
+  start and end, peak and running-out amps next to lb/hr, yield, A per 1k and
+  headroom — so a number can be checked by hand against the sheet it came from.
+- **`—` means not recorded**, never zero. The **Data gaps** line counts them
+  outright (`1 output · 0 peak amps not recorded`) rather than letting a blank
+  pass unnoticed.
+- **Operator attribution per run**, from the name signed in when it was logged.
+- **The footer says what the document is**: *operational record · logging &
+  reference only · not machine control*.
+
+> The sample above is generated from the app's built-in **demo data** plus one
+> logged run — it is not a real production record. Note that demo runs carry a
+> DEMO badge in the app but **that badge does not currently appear in the PDF or
+> CSV export**, so a report exported with demo data loaded looks like a real one.
+> Clear demo runs before exporting anything that leaves the device.

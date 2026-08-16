@@ -22,6 +22,9 @@ backups/
 # Reports & exports
 reports/
 *.pdf
+# …except the documentation sample, which is generated from demo data and is
+# deliberately checked in. Real shift reports stay ignored by the rule above.
+!docs/examples/*.pdf
 
 # Logs
 logs/

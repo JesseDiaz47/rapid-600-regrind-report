@@ -128,7 +128,8 @@ somebody clears the browser data, whatever wasn't exported is gone for good.
 Also available in Reference:
 
 - **Export CSV** — opens in Excel
-- **Export PDF report** — shift summary to send on
+- **Export PDF report** — the one-page shift summary to hand over
+  ([see an example](examples/shift-report-sample.pdf))
 - **Restore from JSON…** — load a backup back in
 - **New shift** — clears runs and shift notes, keeps thresholds and material
   notes
@@ -172,4 +173,6 @@ Tap the run in **This shift** → edit it. Deleting shows an **Undo**.
 2. Leave a field blank if you didn't measure it.
 3. Export a backup at the end of every shift.
 4. Runs marked **DEMO** are fake sample data. Clear them from Reference → Demo
-   data before logging real production.
+   data before logging real production — and **before you export anything**.
+   The DEMO badge shows in the app but does *not* show on the PDF or the CSV,
+   so a report sent out with demo runs still in it looks completely real.
