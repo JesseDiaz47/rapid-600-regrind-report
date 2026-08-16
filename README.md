@@ -1,5 +1,14 @@
 # Rapid 600 Regrind Report
 
+[![CI](https://github.com/JesseDiaz47/rapid-600-regrind-report/actions/workflows/ci.yml/badge.svg)](https://github.com/JesseDiaz47/rapid-600-regrind-report/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Tests](https://img.shields.io/badge/tests-164%20passing-brightgreen?logo=vitest&logoColor=white)](#commands)
+[![Offline](https://img.shields.io/badge/offline-PWA-0b7285?logo=pwa&logoColor=white)](#privacy--non-goals)
+[![Last Commit](https://img.shields.io/github/last-commit/JesseDiaz47/rapid-600-regrind-report)](https://github.com/JesseDiaz47/rapid-600-regrind-report/commits/main)
+
 A **local-only** production tracker for regrind runs on the Rapid Granulator
 600-150 at AGRU Fernley, performed at a **fixed VFD of 20**. It answers the
 questions a shift actually cares about: who ran it, what material, how much it
@@ -137,6 +146,8 @@ npm run lint      # oxlint
 npm run typecheck # tsc project build (no emit)
 npm run build     # typecheck + production build to dist/
 npm run preview   # serve the production build locally
+npm run check     # typecheck + lint + test + build, the gate CI runs
+npm run audit     # npm audit
 ```
 
 ## Privacy & non-goals
@@ -201,3 +212,11 @@ Worth noting in the page above:
 > DEMO badge in the app but **that badge does not currently appear in the PDF or
 > CSV export**, so a report exported with demo data loaded looks like a real one.
 > Clear demo runs before exporting anything that leaves the device.
+
+## License
+
+[MIT](./LICENSE) © 2026 Jesse Diaz.
+
+The license covers the code in this repository. It carries no production data:
+every number in the screenshots, the sample report, and the test suite comes
+from the built-in demo set or from fixtures.
