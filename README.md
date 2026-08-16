@@ -1,9 +1,12 @@
 # Rapid 600 Regrind Report
 
-A phone-first, **local-only** production tracker for regrind runs on the Rapid
-Granulator 600-150 at AGRU Fernley, performed at a **fixed VFD of 20**. It answers
-the questions a shift actually cares about: who ran it, what material, how much it
+A **local-only** production tracker for regrind runs on the Rapid Granulator
+600-150 at AGRU Fernley, performed at a **fixed VFD of 20**. It answers the
+questions a shift actually cares about: who ran it, what material, how much it
 weighed, how long it took, what throughput it hit, and what happened during the run.
+
+Built for the shared station computer or tablet at the machine, and it collapses
+to a one-handed phone layout on anything narrower.
 
 This is a **logging and reference tool**, not machine control. It never starts,
 stops, or configures the granulator, and it is not a VFD optimizer — VFD 20 is
@@ -11,38 +14,48 @@ shown as locked context, never an editable or "recommended" setting.
 
 ## Demo
 
-<p align="center">
-  <img src="docs/screenshots/demo.gif" width="300" alt="Signing in, starting a roll, the live timer running, finishing the roll, and the run landing in the shift totals and Insights">
-</p>
+![Signing in, starting a roll, the live timer running, finishing the roll, and the run landing in the shift totals and Insights](docs/screenshots/demo.gif)
 
-<p align="center"><sub>Sign in → start a roll → live timer → finish roll → totals and Insights update.<br>
-Recorded against the running app with clearly-labeled demo data — no real production records.<br>
-Same clip as a sharper download: <a href="docs/screenshots/demo.mp4">demo.mp4</a>.</sub></p>
+Sign in → start a roll → live timer → finish roll → totals and Insights update.
+Recorded against the running app with clearly-labeled demo data — no real
+production records. Sharper copy to download: [demo.mp4](docs/screenshots/demo.mp4).
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td align="center" width="33%">
-      <a href="docs/screenshots/01-pulse.png"><img src="docs/screenshots/card-pulse.png" width="240" alt="Pulse screen: shift totals, latest run headroom, next best action"></a><br>
-      <sub><b>Pulse</b> — shift totals, amp headroom,<br>and one next action</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="docs/screenshots/03-log-active-timer.png"><img src="docs/screenshots/card-log.png" width="240" alt="Log screen: live run timer above the Finish Roll form"></a><br>
-      <sub><b>Log</b> — live timer with the finish<br>fields already waiting</sub>
-    </td>
-    <td align="center" width="33%">
-      <a href="docs/screenshots/06-insights.png"><img src="docs/screenshots/card-insights.png" width="240" alt="Insights screen: throughput by material and per-material breakdown"></a><br>
-      <sub><b>Insights</b> — material vs material,<br>never VFD vs VFD</sub>
-    </td>
-  </tr>
-</table>
+### Pulse — the glance screen
 
-<p align="center"><sub>Tap any shot for the full screen · Also:
-<a href="docs/screenshots/00-sign-in.png">sign-in</a> ·
-<a href="docs/screenshots/02-log-start.png">start a roll</a> ·
-<a href="docs/screenshots/04-log-list.png">shift list</a> ·
-<a href="docs/screenshots/05-reference.png">reference</a></sub></p>
+Shift totals, the last run's amp headroom, and one plain-English next action.
+
+![Pulse screen showing shift weight, average lb/hr, average roll time, rolls done, the latest run with its amp headroom bar, and a next best action](docs/screenshots/01-pulse.png)
+
+### Log — start a roll, finish a roll
+
+One number required to start: input weight. The timer runs, and the finish
+fields are already on screen waiting.
+
+![Log screen with a running roll, live timer, and the finish-roll form above the shift list](docs/screenshots/03-log-active-timer.png)
+
+### Insights — material vs material
+
+Per-material throughput, weight, roll time and peak amps, plus a head-to-head
+comparison. It compares materials, never VFDs — every run is at 20.
+
+![Insights screen comparing average throughput across materials with a per-material breakdown](docs/screenshots/06-insights.png)
+
+### Reference — thresholds, formulas, and your data
+
+![Reference screen with amp thresholds, the employee roster, formulas, and local data export options](docs/screenshots/05-reference.png)
+
+More: [sign-in](docs/screenshots/00-sign-in.png) ·
+[start a roll](docs/screenshots/02-log-start.png) ·
+[shift list after logging](docs/screenshots/04-log-list.png)
+
+### Same app on a phone
+
+The layout collapses to a bottom tab bar under 900px, so the station tablet and
+a phone in a pocket run the identical build.
+
+<img src="docs/screenshots/08-phone-pulse.png" width="300" alt="Pulse screen on a phone, with the navigation collapsed to a bottom tab bar">
 
 ## Documentation
 
