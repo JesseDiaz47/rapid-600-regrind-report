@@ -9,6 +9,43 @@ This is a **logging and reference tool**, not machine control. It never starts,
 stops, or configures the granulator, and it is not a VFD optimizer — VFD 20 is
 shown as locked context, never an editable or "recommended" setting.
 
+## Demo
+
+<p align="center">
+  <img src="docs/screenshots/demo.gif" width="280" alt="Sign in, start a roll, watch the live timer, finish the roll, and see it land in Insights">
+</p>
+
+<p align="center"><sub>Sign in → start a roll → live timer → finish roll → Insights.
+Full-resolution version: <a href="docs/screenshots/demo.mp4">docs/screenshots/demo.mp4</a>.
+Shown with clearly-labeled demo data, not real production runs.</sub></p>
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="20%">
+      <img src="docs/screenshots/01-pulse.png" width="180" alt="Pulse screen: shift totals, latest run headroom, next best action"><br>
+      <sub><b>Pulse</b><br>shift totals & headroom</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="docs/screenshots/03-log-active-timer.png" width="180" alt="Log screen: live run timer with Finish Roll form"><br>
+      <sub><b>Log</b><br>live run → Finish Roll</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="docs/screenshots/06-insights.png" width="180" alt="Insights screen: throughput by material and per-material breakdown"><br>
+      <sub><b>Insights</b><br>per-material breakdown</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="docs/screenshots/05-reference.png" width="180" alt="Reference screen: amp thresholds, machine settings, employee roster"><br>
+      <sub><b>Reference</b><br>thresholds & roster</sub>
+    </td>
+    <td align="center" width="20%">
+      <img src="docs/screenshots/00-sign-in.png" width="180" alt="Sign-in screen: pick your name from the employee roster"><br>
+      <sub><b>Sign-in</b><br>local roster picker</sub>
+    </td>
+  </tr>
+</table>
+
 ## Features
 
 - **Sign-in** — pick your name from the employee roster (managed in Reference →
@@ -41,7 +78,35 @@ never invented zeros):
 - A per 1k lb/hr = peak amps ÷ lb/hr × 1000
 - Headroom = trip threshold − peak amps, with safe/near/trip status
 
-## Commands
+## Getting started
+
+```bash
+git clone https://github.com/JesseDiaz47/rapid-600-regrind-report.git
+cd rapid-600-regrind-report
+npm install
+npm run dev        # Vite dev server at http://localhost:4175
+```
+
+Open the dev server URL, then:
+
+1. **Sign in.** First launch has no roster — type a name and tap **Add
+   employee** to create it, then tap your name on the picker. More names get
+   added later from Reference → Employees.
+2. **Try it with sample data.** Reference → Demo data → **Load demo runs**
+   seeds a few clearly-labeled runs (each tagged `demo: true`) so Pulse,
+   Log, and Insights aren't empty while you look around. Clear them from the
+   same panel whenever you're done.
+3. **Log a run.** Log → fill in material and input weight → **Start Roll**
+   starts the live timer; **Finish Roll** records end time, output weight,
+   peak/running-out amps, and any issue flags.
+4. **Check the numbers.** Pulse shows shift totals and amp headroom on the
+   latest run; Insights compares materials against each other for this
+   shift.
+
+Everything is written to the browser's `localStorage` — nothing leaves the
+device (see [Privacy & non-goals](#privacy--non-goals)).
+
+### Commands
 
 ```bash
 npm install       # install dependencies
