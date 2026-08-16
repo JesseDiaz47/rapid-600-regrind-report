@@ -12,8 +12,25 @@ export function OperatorGate({ roster }: { roster: UseRoster }) {
   const [pin, setPin] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [newName, setNewName] = useState('')
+  const [recovering, setRecovering] = useState(false)
+  const [recovered, setRecovered] = useState(false)
 
   const pendingEmployee = roster.activeRoster.find((e) => e.id === pendingId) ?? null
+  const anyPins = roster.activeRoster.some((e) => e.pin)
+
+  /**
+   * Escape hatch for a PIN nobody remembers. Without it the gate covers the
+   * whole app with no way past, which on a tablet at the machine means the
+   * shift cannot be logged at all.
+   */
+  function clearPins() {
+    roster.clearPins()
+    setRecovering(false)
+    setRecovered(true)
+    setPendingId(null)
+    setPin('')
+    setError(null)
+  }
 
   function addFirstEmployee(e: React.FormEvent) {
     e.preventDefault()
@@ -118,6 +135,47 @@ export function OperatorGate({ roster }: { roster: UseRoster }) {
                 {employee.name}
               </button>
             ))}
+          </div>
+        )}
+
+        {recovered && (
+          <p className="restore-ok" role="status">
+            PINs cleared. Tap your name to sign in — you can set a new PIN in Reference →
+            Employees.
+          </p>
+        )}
+
+        {anyPins && !recovered && (
+          <div className="operator-gate__recovery">
+            {recovering ? (
+              <>
+                <p className="hint-text">
+                  Clear the PIN from every name on this device? Names and logged runs are kept —
+                  this only removes the PIN guard, and a new one can be set from Reference →
+                  Employees.
+                </p>
+                <div className="button-stack">
+                  <button type="button" className="btn btn-primary btn-block" onClick={clearPins}>
+                    Clear PINs on this device
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-block"
+                    onClick={() => setRecovering(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-ghost btn-block"
+                onClick={() => setRecovering(true)}
+              >
+                Can&apos;t sign in?
+              </button>
+            )}
           </div>
         )}
       </div>

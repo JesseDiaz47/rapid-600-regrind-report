@@ -84,6 +84,8 @@ export interface UseRoster {
   signOut: () => void
   /** Add employees from a restored backup. Returns how many were added. */
   mergeRoster: (incoming: Employee[]) => number
+  /** Drop the PIN from every name on this device. Returns how many were cleared. */
+  clearPins: () => number
 }
 
 export function useRoster(): UseRoster {
@@ -165,6 +167,23 @@ export function useRoster(): UseRoster {
     [roster],
   )
 
+  /**
+   * Drop every PIN on this device, so a forgotten one stops being a dead end.
+   *
+   * A PIN only guards against tapping the wrong name on a shared device, but
+   * the sign-in gate covers the whole app, so a name whose PIN nobody
+   * remembers locked the tablet out entirely — with no way back that didn't
+   * involve a developer console. Names and logged runs are deliberately left
+   * alone: this clears the guard, not the shift.
+   */
+  const clearPins = useCallback((): number => {
+    const cleared = roster.filter((e) => e.pin !== null).length
+    if (cleared > 0) {
+      setRoster((current) => current.map((e) => (e.pin === null ? e : { ...e, pin: null })))
+    }
+    return cleared
+  }, [roster])
+
   return {
     roster,
     activeRoster: roster.filter((e) => e.active),
@@ -175,5 +194,6 @@ export function useRoster(): UseRoster {
     selectOperator,
     signOut,
     mergeRoster,
+    clearPins,
   }
 }
