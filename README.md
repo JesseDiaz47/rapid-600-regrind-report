@@ -12,39 +12,44 @@ shown as locked context, never an editable or "recommended" setting.
 ## Demo
 
 <p align="center">
-  <img src="docs/screenshots/demo.gif" width="280" alt="Sign in, start a roll, watch the live timer, finish the roll, and see it land in Insights">
+  <img src="docs/screenshots/demo.gif" width="300" alt="Signing in, starting a roll, the live timer running, finishing the roll, and the run landing in the shift totals and Insights">
 </p>
 
-<p align="center"><sub>Sign in → start a roll → live timer → finish roll → Insights.
-Full-resolution version: <a href="docs/screenshots/demo.mp4">docs/screenshots/demo.mp4</a>.
-Shown with clearly-labeled demo data, not real production runs.</sub></p>
+<p align="center"><sub>Sign in → start a roll → live timer → finish roll → totals and Insights update.<br>
+Recorded against the running app with clearly-labeled demo data — no real production records.<br>
+Same clip as a sharper download: <a href="docs/screenshots/demo.mp4">demo.mp4</a>.</sub></p>
 
 ## Screenshots
 
 <table>
   <tr>
-    <td align="center" width="20%">
-      <img src="docs/screenshots/01-pulse.png" width="180" alt="Pulse screen: shift totals, latest run headroom, next best action"><br>
-      <sub><b>Pulse</b><br>shift totals & headroom</sub>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/01-pulse.png"><img src="docs/screenshots/card-pulse.png" width="240" alt="Pulse screen: shift totals, latest run headroom, next best action"></a><br>
+      <sub><b>Pulse</b> — shift totals, amp headroom,<br>and one next action</sub>
     </td>
-    <td align="center" width="20%">
-      <img src="docs/screenshots/03-log-active-timer.png" width="180" alt="Log screen: live run timer with Finish Roll form"><br>
-      <sub><b>Log</b><br>live run → Finish Roll</sub>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/03-log-active-timer.png"><img src="docs/screenshots/card-log.png" width="240" alt="Log screen: live run timer above the Finish Roll form"></a><br>
+      <sub><b>Log</b> — live timer with the finish<br>fields already waiting</sub>
     </td>
-    <td align="center" width="20%">
-      <img src="docs/screenshots/06-insights.png" width="180" alt="Insights screen: throughput by material and per-material breakdown"><br>
-      <sub><b>Insights</b><br>per-material breakdown</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="docs/screenshots/05-reference.png" width="180" alt="Reference screen: amp thresholds, machine settings, employee roster"><br>
-      <sub><b>Reference</b><br>thresholds & roster</sub>
-    </td>
-    <td align="center" width="20%">
-      <img src="docs/screenshots/00-sign-in.png" width="180" alt="Sign-in screen: pick your name from the employee roster"><br>
-      <sub><b>Sign-in</b><br>local roster picker</sub>
+    <td align="center" width="33%">
+      <a href="docs/screenshots/06-insights.png"><img src="docs/screenshots/card-insights.png" width="240" alt="Insights screen: throughput by material and per-material breakdown"></a><br>
+      <sub><b>Insights</b> — material vs material,<br>never VFD vs VFD</sub>
     </td>
   </tr>
 </table>
+
+<p align="center"><sub>Tap any shot for the full screen · Also:
+<a href="docs/screenshots/00-sign-in.png">sign-in</a> ·
+<a href="docs/screenshots/02-log-start.png">start a roll</a> ·
+<a href="docs/screenshots/04-log-list.png">shift list</a> ·
+<a href="docs/screenshots/05-reference.png">reference</a></sub></p>
+
+## Documentation
+
+| Guide | For |
+|---|---|
+| **[Operator Guide](docs/OPERATOR-GUIDE.md)** | Using it at the machine. Plain English, printable, no setup — sign in, log a roll, read the amp bar, export at end of shift. |
+| **[Walkthrough](docs/WALKTHROUGH.md)** | How it's built and why — screen by screen, the calculations, the local-only trade-offs, and the known limits. |
 
 ## Features
 
@@ -105,6 +110,9 @@ Open the dev server URL, then:
 
 Everything is written to the browser's `localStorage` — nothing leaves the
 device (see [Privacy & non-goals](#privacy--non-goals)).
+
+For the shop-floor version of these steps — no clone, no terminal — see the
+**[Operator Guide](docs/OPERATOR-GUIDE.md)**.
 
 ### Commands
 
