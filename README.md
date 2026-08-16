@@ -66,7 +66,13 @@ npm run preview   # serve the production build locally
 - **Not machine control.** No machine control, no automatic VFD changes, no real
   production records committed to the repo.
 - **Offline.** Ships a web manifest and a cache-first service worker, so once
-  loaded it works offline and can be added to a phone home screen.
+  loaded it works offline and can be added to a phone home screen. Each build
+  stamps its own id into the worker, so deploying a new version retires the old
+  cache automatically — no constant to bump by hand. An installed device picks
+  the release up on its **next** launch: the launch after a deploy still serves
+  the cached copy while the new worker installs in the background. Reference
+  shows the running build at the bottom, which is how you tell whether a given
+  phone or tablet has the update.
 
 Backups are versioned; restore validates the app signature, schema version, and
 every numeric range before trusting a file. Shift data is replaced wholesale on
