@@ -323,16 +323,29 @@
   border-left: 2px dashed rgba(234, 246, 255, 0.5);
   height: 18px;
 }
-.headroom__mark span {
-  position: absolute;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.6rem;
-  white-space: nowrap;
+.headroom__mark--trip {
+  border-color: rgba(255, 82, 99, 0.7);
+}
+.headroom__legend {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  font-size: 0.68rem;
   color: var(--text-dim);
 }
-.headroom__mark--trip {
+.headroom__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+}
+.headroom__key::before {
+  content: '';
+  width: 10px;
+  border-top: 2px dashed rgba(234, 246, 255, 0.5);
+}
+.headroom__key--trip::before {
   border-color: rgba(255, 82, 99, 0.7);
 }
 
