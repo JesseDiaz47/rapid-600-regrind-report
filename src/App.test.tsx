@@ -207,6 +207,65 @@ describe('Operator sign-in gate', () => {
     expect(screen.getByRole('button', { name: 'Alex Rivera' })).toBeInTheDocument()
   })
 
+  it('offers a way past a PIN nobody remembers, keeping names and runs', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem(
+      ROSTER_KEY,
+      JSON.stringify([
+        { id: 'employee-a', name: 'Alex Rivera', pin: '4821', active: true },
+        { id: 'employee-b', name: 'Sam Lee', pin: '1234', active: true },
+      ]),
+    )
+    render(<App />)
+
+    // A wrong PIN otherwise leaves the gate covering the whole app with no way on.
+    await user.click(screen.getByRole('button', { name: 'Alex Rivera' }))
+    fireEvent.change(document.querySelector('.operator-gate__pin-input') as HTMLInputElement, {
+      target: { value: '0000' },
+    })
+    await user.click(screen.getByRole('button', { name: /^Sign in$/i }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Wrong PIN.')
+
+    await user.click(screen.getByRole('button', { name: /Can't sign in\?/i }))
+    await user.click(screen.getByRole('button', { name: /Clear PINs on this device/i }))
+
+    // Both names survive, and either one now signs in without a PIN.
+    expect(screen.getByRole('button', { name: 'Alex Rivera' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sam Lee' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Alex Rivera' }))
+    expect(screen.getByText('No active roll')).toBeInTheDocument()
+
+    const stored = JSON.parse(window.localStorage.getItem(ROSTER_KEY) as string)
+    expect(stored.map((e: { name: string; pin: string | null }) => [e.name, e.pin])).toEqual([
+      ['Alex Rivera', null],
+      ['Sam Lee', null],
+    ])
+  })
+
+  it('does not offer the escape hatch when no PIN is set', () => {
+    window.localStorage.setItem(
+      ROSTER_KEY,
+      JSON.stringify([{ id: 'employee-a', name: 'Alex Rivera', pin: null, active: true }]),
+    )
+    render(<App />)
+    expect(screen.queryByRole('button', { name: /Can't sign in\?/i })).not.toBeInTheDocument()
+  })
+
+  it('leaves logged shift data untouched when PINs are cleared', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem(
+      ROSTER_KEY,
+      JSON.stringify([{ id: 'employee-a', name: 'Alex Rivera', pin: '4821', active: true }]),
+    )
+    render(<App />)
+    const before = window.localStorage.getItem(STORAGE_KEY)
+
+    await user.click(screen.getByRole('button', { name: /Can't sign in\?/i }))
+    await user.click(screen.getByRole('button', { name: /Clear PINs on this device/i }))
+
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe(before)
+  })
+
   it('lets the first employee be added directly from the gate when the roster is empty', async () => {
     const user = userEvent.setup()
     render(<App />)

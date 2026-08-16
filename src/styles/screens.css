@@ -840,6 +840,13 @@
 .operator-gate__pin p {
   margin-bottom: var(--sp-3);
 }
+/* Sits below the name tiles, separated so it reads as a way out rather than
+   another way in. */
+.operator-gate__recovery {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border);
+}
 .operator-gate__pin-input {
   width: 100%;
   min-height: var(--tap);
