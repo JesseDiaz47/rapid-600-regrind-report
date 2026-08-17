@@ -137,6 +137,10 @@ never invented zeros):
 
 ## Getting started
 
+Needs **Node.js 20.19 or newer** (22 LTS recommended) and npm — Vite 8 and
+TypeScript 6 require it, and `npm install` stops with a clear message on
+anything older. Nothing else: no database, no API keys, no `.env`.
+
 ```bash
 git clone https://github.com/JesseDiaz47/rapid-600-regrind-report.git
 cd rapid-600-regrind-report
